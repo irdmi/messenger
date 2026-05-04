@@ -15,20 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupEventListeners() {
-  // Menu
   document.getElementById('menu-btn').addEventListener('click', openSidebar);
   document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
   document.getElementById('overlay').addEventListener('click', closeSidebar);
-  
-  // Reload
   document.getElementById('reload-btn').addEventListener('click', loadMessages);
   
-  // Enter key
   document.getElementById('msg-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
   });
   
-  // Close modal on Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal();
@@ -87,51 +82,9 @@ async function login() {
     localStorage.setItem('chat_token', authToken);
     localStorage.setItem('chat_username', data.username);
     
-    showToast('Welcome back!', 'success');
+    showToast('Welcome!', 'success');
     showChatScreen();
     loadChats();
-  } catch (err) {
-    showToast('Connection error: ' + err.message, 'error');
-  }
-}
-
-async function register() {
-  const username = document.getElementById('register-username').value.trim();
-  const password = document.getElementById('register-password').value;
-  const inviteCode = document.getElementById('register-invite').value.trim();
-  
-  if (!username || !password) {
-    showToast('Enter username and password', 'error');
-    return;
-  }
-  
-  if (username.length < 3) {
-    showToast('Username must be at least 3 characters', 'error');
-    return;
-  }
-  
-  if (password.length < 6) {
-    showToast('Password must be at least 6 characters', 'error');
-    return;
-  }
-  
-  try {
-    const resp = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, inviteCode })
-    });
-    
-    const data = await resp.json();
-    
-    if (!resp.ok) {
-      showToast(data.error || 'Registration failed', 'error');
-      return;
-    }
-    
-    showToast('Registration successful! Please login.', 'success');
-    showLogin();
-    document.getElementById('login-username').value = username;
   } catch (err) {
     showToast('Connection error: ' + err.message, 'error');
   }
@@ -159,16 +112,6 @@ function showChatScreen() {
   document.getElementById('chat-screen').classList.remove('hidden');
   document.getElementById('chat-screen').classList.add('active');
   document.getElementById('current-username').textContent = `@${currentUser.username}`;
-}
-
-function showLogin() {
-  document.getElementById('login-form').classList.remove('hidden');
-  document.getElementById('register-form').classList.add('hidden');
-}
-
-function showRegister() {
-  document.getElementById('login-form').classList.add('hidden');
-  document.getElementById('register-form').classList.remove('hidden');
 }
 
 // ===== CHATS =====
@@ -267,7 +210,7 @@ async function loadMessages() {
     messages.forEach(msg => {
       const div = document.createElement('div');
       div.className = 'msg-item';
-      div.textContent = msg.ciphertext; // Will be decrypted by client
+      div.textContent = msg.ciphertext;
       container.appendChild(div);
     });
     
@@ -288,7 +231,6 @@ async function sendMessage() {
     return;
   }
   
-  // Encrypt message (client-side)
   const encryptedData = await encryptMessage(text);
   
   try {
@@ -314,7 +256,6 @@ async function sendMessage() {
   }
 }
 
-// Simple encryption (replace with proper AES-GCM in production)
 async function encryptMessage(text) {
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(12));
