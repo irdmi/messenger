@@ -2,6 +2,7 @@ const API_URL = 'https://messenger.gigpino7.workers.dev';
 
 let currentUser = null;
 let currentChatId = null;
+let currentChatSeed = null; // Seed для текущего чата
 let authToken = localStorage.getItem('chat_token');
 
 // ===== INIT =====
@@ -96,6 +97,7 @@ function logout() {
   authToken = null;
   currentUser = null;
   currentChatId = null;
+  currentChatSeed = null;
   showAuthScreen();
   showToast('Logged out', 'success');
 }
@@ -147,9 +149,15 @@ async function loadChats() {
 
 async function createChat() {
   const name = document.getElementById('new-chat-name').value.trim();
+  const seed = document.getElementById('new-chat-seed').value;
   
   if (!name) {
     showToast('Enter chat name', 'error');
+    return;
+  }
+  
+  if (!seed || seed.length < 4) {
+    showToast('Encryption password must be at least 4 characters', 'error');
     return;
   }
   
@@ -170,8 +178,14 @@ async function createChat() {
       return;
     }
     
+    // Сохраняем seed для этого чата
+    const chatSeeds = JSON.parse(localStorage.getItem('chat_seeds') || '{}');
+    chatSeeds[data.id] = seed;
+    localStorage.setItem('chat_seeds', JSON.stringify(chatSeeds));
+    
     closeModal();
     document.getElementById('new-chat-name').value = '';
+    document.getElementById('new-chat-seed').value = '';
     showToast('Chat created!', 'success');
     loadChats();
     openChat(data.id, data.name);
@@ -182,6 +196,16 @@ async function createChat() {
 
 function openChat(chatId, chatName) {
   currentChatId = chatId;
+  
+  // Загружаем seed для этого чата
+  const chatSeeds = JSON.parse(localStorage.getItem('chat_seeds') || '{}');
+  currentChatSeed = chatSeeds[chatId];
+  
+  if (!currentChatSeed) {
+    showToast('Error: No encryption key for this chat', 'error');
+    return;
+  }
+  
   document.getElementById('chat-title').textContent = chatName;
   closeSidebar();
   loadMessages();
@@ -190,6 +214,10 @@ function openChat(chatId, chatName) {
 // ===== MESSAGES =====
 async function loadMessages() {
   if (!currentChatId) return;
+  if (!currentChatSeed) {
+    showToast('Error: No encryption key', 'error');
+    return;
+  }
   
   try {
     const resp = await fetch(`${API_URL}/chats/${currentChatId}/messages`, {
@@ -207,12 +235,23 @@ async function loadMessages() {
       return;
     }
     
-    messages.forEach(msg => {
-      const div = document.createElement('div');
-      div.className = 'msg-item';
-      div.textContent = msg.ciphertext;
-      container.appendChild(div);
-    });
+    // Расшифровываем каждое сообщение
+    for (const msg of messages) {
+      try {
+        const decrypted = decryptMessage(msg.ciphertext, currentChatSeed);
+        const div = document.createElement('div');
+        div.className = 'msg-item';
+        div.textContent = decrypted;
+        container.appendChild(div);
+      } catch (e) {
+        console.error('Decrypt failed:', e);
+        const div = document.createElement('div');
+        div.className = 'msg-item';
+        div.style.color = 'var(--error-color)';
+        div.textContent = '⚠️ Failed to decrypt';
+        container.appendChild(div);
+      }
+    }
     
     container.scrollTop = container.scrollHeight;
   } catch (err) {
@@ -230,8 +269,13 @@ async function sendMessage() {
     showToast('Select a chat first', 'error');
     return;
   }
+  if (!currentChatSeed) {
+    showToast('Error: No encryption key', 'error');
+    return;
+  }
   
-  const encryptedData = await encryptMessage(text);
+  // Шифруем сообщение
+  const encryptedData = encryptMessage(text, currentChatSeed);
   
   try {
     const resp = await fetch(`${API_URL}/chats/${currentChatId}/messages`, {
@@ -256,13 +300,23 @@ async function sendMessage() {
   }
 }
 
-async function encryptMessage(text) {
-  const encoder = new TextEncoder();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(text));
+// ===== CRYPTO (CryptoJS) =====
+function encryptMessage(text, seed) {
+  // Шифруем с помощью CryptoJS AES
+  const encrypted = CryptoJS.AES.encrypt(text, seed).toString();
+  return encrypted;
+}
+
+function decryptMessage(ciphertext, seed) {
+  // Расшифровываем с помощью CryptoJS AES
+  const bytes = CryptoJS.AES.decrypt(ciphertext, seed);
+  const decrypted = bytes.toString(CryptoJS.enc.Utf8);
   
-  return btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+  if (!decrypted) {
+    throw new Error('Decryption failed');
+  }
+  
+  return decrypted;
 }
 
 // ===== SIDEBAR & MODAL =====
@@ -292,6 +346,7 @@ function closeModal() {
   document.getElementById('overlay').classList.add('hidden');
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('new-chat-name').value = '';
+  document.getElementById('new-chat-seed').value = '';
 }
 
 // ===== UTILS =====
