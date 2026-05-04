@@ -93,6 +93,7 @@ body {
 .auth-switch a {
   color: var(--accent-color);
   text-decoration: none;
+  cursor: pointer;
 }
 
 .auth-switch a:hover {
@@ -544,22 +545,5 @@ button.primary-btn { background: var(--accent-color); }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* Dark/Light theme */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg-color: #f0f2f5;
-    --container-bg: #ffffff;
-    --panel-bg: #e4e6eb;
-    --text-color: #1c1e21;
-    --text-muted: #65676b;
-    --border-color: #ddd;
-  }
-  
-  .msg-item {
-    background: var(--panel-bg);
-    color: var(--text-color);
   }
 }
