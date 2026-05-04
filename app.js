@@ -360,3 +360,54 @@ function showToast(message, type = 'info') {
     toast.classList.add('hidden');
   }, 3000);
 }
+
+
+
+
+
+
+// ===== lLOGS =====
+async function loadMessages() {
+  const msgDiv = document.getElementById('messages');
+  console.log('=== LOAD MESSAGES ===');
+  console.log('currentSeed:', currentSeed);
+  console.log('currentChatId:', currentChatId);
+  
+  if (!msgDiv) return;
+  try {
+    const url = PROXY_URL + '?action=read&file=' + encodeURIComponent(FILE_NAME) + '&t=' + Date.now();
+    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    
+    const data = await response.json();
+    console.log('Received data:', data);
+    console.log('Messages count:', data.messages ? data.messages.length : 0);
+    
+    msgDiv.innerHTML = '';
+    
+    if (data.messages && Array.isArray(data.messages)) {
+      for (const msg of data.messages) {
+        try {
+          console.log('Decrypting with seed:', currentSeed);
+          const bytes = CryptoJS.AES.decrypt(msg.encrypted, currentSeed);
+          const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+          console.log('Decrypted:', decrypted);
+          
+          if (decrypted) {
+            const div = document.createElement('div');
+            div.className = 'msg-item';
+            div.textContent = decrypted;
+            msgDiv.appendChild(div);
+          }
+        } catch (e) {
+          console.warn('Decrypt failed:', e);
+        }
+      }
+      msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+  } catch (err) {
+    console.error('Load error:', err);
+    msgDiv.innerHTML = '<div class="msg-item" style="color:#f85">Load failed</div>';
+  }
+}
