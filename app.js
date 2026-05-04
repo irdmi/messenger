@@ -2,10 +2,9 @@ const API_URL = 'https://messenger.gigpino7.workers.dev';
 
 let currentUser = null;
 let currentChatId = null;
-let currentChatSeed = null; // Seed для текущего чата
+let currentChatSeed = null;
 let authToken = localStorage.getItem('chat_token');
 
-// ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   if (authToken) {
@@ -33,7 +32,6 @@ function setupEventListeners() {
   });
 }
 
-// ===== AUTH =====
 async function checkAuth() {
   try {
     const resp = await fetch(`${API_URL}/me`, {
@@ -102,7 +100,6 @@ function logout() {
   showToast('Logged out', 'success');
 }
 
-// ===== UI =====
 function showAuthScreen() {
   document.getElementById('auth-screen').classList.add('active');
   document.getElementById('chat-screen').classList.remove('active');
@@ -116,7 +113,6 @@ function showChatScreen() {
   document.getElementById('current-username').textContent = `@${currentUser.username}`;
 }
 
-// ===== CHATS =====
 async function loadChats() {
   try {
     const resp = await fetch(`${API_URL}/chats`, {
@@ -178,7 +174,6 @@ async function createChat() {
       return;
     }
     
-    // Сохраняем seed для этого чата
     const chatSeeds = JSON.parse(localStorage.getItem('chat_seeds') || '{}');
     chatSeeds[data.id] = seed;
     localStorage.setItem('chat_seeds', JSON.stringify(chatSeeds));
@@ -197,7 +192,6 @@ async function createChat() {
 function openChat(chatId, chatName) {
   currentChatId = chatId;
   
-  // Загружаем seed для этого чата
   const chatSeeds = JSON.parse(localStorage.getItem('chat_seeds') || '{}');
   currentChatSeed = chatSeeds[chatId];
   
@@ -211,7 +205,6 @@ function openChat(chatId, chatName) {
   loadMessages();
 }
 
-// ===== MESSAGES =====
 async function loadMessages() {
   if (!currentChatId) return;
   if (!currentChatSeed) {
@@ -235,7 +228,6 @@ async function loadMessages() {
       return;
     }
     
-    // Расшифровываем каждое сообщение
     for (const msg of messages) {
       try {
         const decrypted = decryptMessage(msg.ciphertext, currentChatSeed);
@@ -253,7 +245,9 @@ async function loadMessages() {
       }
     }
     
-    container.scrollTop = container.scrollHeight;
+    setTimeout(() => {
+      container.scrollTop = container.scrollHeight;
+    }, 10);
   } catch (err) {
     console.error('Load messages error:', err);
     showToast('Failed to load messages', 'error');
@@ -274,7 +268,6 @@ async function sendMessage() {
     return;
   }
   
-  // Шифруем сообщение
   const encryptedData = encryptMessage(text, currentChatSeed);
   
   try {
@@ -300,15 +293,12 @@ async function sendMessage() {
   }
 }
 
-// ===== CRYPTO (CryptoJS) =====
 function encryptMessage(text, seed) {
-  // Шифруем с помощью CryptoJS AES
   const encrypted = CryptoJS.AES.encrypt(text, seed).toString();
   return encrypted;
 }
 
 function decryptMessage(ciphertext, seed) {
-  // Расшифровываем с помощью CryptoJS AES
   const bytes = CryptoJS.AES.decrypt(ciphertext, seed);
   const decrypted = bytes.toString(CryptoJS.enc.Utf8);
   
@@ -319,7 +309,6 @@ function decryptMessage(ciphertext, seed) {
   return decrypted;
 }
 
-// ===== SIDEBAR & MODAL =====
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.remove('hidden');
@@ -349,7 +338,6 @@ function closeModal() {
   document.getElementById('new-chat-seed').value = '';
 }
 
-// ===== UTILS =====
 function showToast(message, type = 'info') {
   const toast = document.getElementById('toast');
   toast.textContent = message;
@@ -360,4 +348,3 @@ function showToast(message, type = 'info') {
     toast.classList.add('hidden');
   }, 3000);
 }
-
