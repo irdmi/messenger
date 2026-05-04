@@ -159,6 +159,7 @@ body {
   flex-direction: column;
   gap: 10px;
   -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 .msg-item {
