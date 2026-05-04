@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Irdmi messenger (Chat v2)</title>
+  <title>Irdmi chat (Chat v2)</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
@@ -12,7 +12,7 @@
     <!-- Auth Screen -->
     <div id="auth-screen" class="screen active">
       <div class="auth-container">
-        <h1>Irdmi chat</h1>
+        <h1>Irdmi Chat</h1>
         <p class="subtitle">End-to-end encrypted messaging</p>
         
         <!-- Login Form -->
@@ -21,12 +21,6 @@
           <input type="text" id="login-username" placeholder="Username" autocomplete="username">
           <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
           <button onclick="login()" class="primary-btn">Login</button>
-          <div class="user-list">
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 20px;">Available users:</p>
-            <p style="color: var(--text-muted); font-size: 0.8rem;">admin / admin123</p>
-            <p style="color: var(--text-muted); font-size: 0.8rem;">user1 / password1</p>
-            <p style="color: var(--text-muted); font-size: 0.8rem;">user2 / password2</p>
-          </div>
         </div>
       </div>
     </div>
@@ -75,6 +69,8 @@
           <button onclick="closeModal()" class="close-btn">✕</button>
         </div>
         <input type="text" id="new-chat-name" placeholder="Chat name (required)" maxlength="50">
+        <input type="password" id="new-chat-seed" placeholder="Encryption password (keep secret!)" autocomplete="off">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">🔑 This password encrypts all messages. Don't lose it!</p>
         <div class="modal-actions">
           <button onclick="createChat()" class="primary-btn">Create</button>
           <button onclick="closeModal()" class="secondary-btn">Cancel</button>
